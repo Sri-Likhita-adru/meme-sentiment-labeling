@@ -4,19 +4,21 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import pandas as pd
 
-BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
-FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")   # index.html, styles.css, app.js
-STATIC_DIR   = os.path.join(BASE_DIR, "static")     # static/images/...
-IMAGES_DIR   = os.path.join(STATIC_DIR, "images")
-
-DATA_DIR     = os.path.join(BASE_DIR, "data")
+# Prefer an external storage dir if provided (e.g., Render disk)
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
 os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(IMAGES_DIR, exist_ok=True)
 
-STUDY_CSV    = os.path.join(DATA_DIR, "study_trials.csv")  # your prepared study rows
-SUBMIT_CSV   = os.path.join(DATA_DIR, "submissions.csv")   # flat CSV log
-SUBMIT_JSONL = os.path.join(DATA_DIR, "submissions.jsonl") # robust JSON log
-CODES_CSV    = os.path.join(DATA_DIR, "codes.csv")         # survey_code ↔ uniqname/worker
+STUDY_CSV    = os.path.join(DATA_DIR, "study_trials.csv")
+SUBMIT_CSV   = os.path.join(DATA_DIR, "submissions.csv")
+SUBMIT_JSONL = os.path.join(DATA_DIR, "submissions.jsonl")
+CODES_CSV    = os.path.join(DATA_DIR, "codes.csv")
+
+# If study CSV missing in DATA_DIR but present in repo data/, copy it over once
+REPO_DATA = os.path.join(BASE_DIR, "data")
+fallback_csv = os.path.join(REPO_DATA, "study_trials.csv")
+if not os.path.exists(STUDY_CSV) and os.path.exists(fallback_csv):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    shutil.copyfile(fallback_csv, STUDY_CSV)
 
 # Try to ensure example image exists under /static/images
 WIN_EXAMPLE = r"C:\Users\srili\Downloads\UM Courses\Fall 2025\CSE 594\Assignment 3\Website\static\images\image_808.jpg"
