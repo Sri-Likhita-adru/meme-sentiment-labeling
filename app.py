@@ -197,6 +197,15 @@ def api_submit():
 
     return jsonify({"ok": True, "survey_code": code})
 
+@app.get("/download-data")
+def download_data():
+    import shutil, io
+    from flask import send_file
+
+    zip_path = os.path.join(BASE_DIR, "submissions_backup.zip")
+    shutil.make_archive(zip_path.replace(".zip", ""), 'zip', DATA_DIR)
+    return send_file(zip_path, as_attachment=True)
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", "8080"))
