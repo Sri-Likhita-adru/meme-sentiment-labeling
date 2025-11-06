@@ -14,8 +14,6 @@ Thumbs.db
 .vscode/
 
 # Data & logs (don’t upload participant data!)
-data/*.csv
-data/*.jsonl
 data/*.tsv
 data/*.parquet
 data/*.xlsx
@@ -25,4 +23,6 @@ submissions.sqlite
 static/images/*.psd
 static/images/*.tif
 # allow your example image:
+!data/
+!data/**
 !static/images/image_808.jpg
