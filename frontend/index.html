@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <title>Meme Sentiment Labeling</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">Meme Sentiment Labeling</div>
+    <div id="sessionTimer" class="timer hidden" aria-live="polite">00:00</div>
+    <div class="top-actions">
+      <button id="btnTheme" class="btn ghost" type="button" aria-pressed="false" title="Toggle theme">🌗 Light/Dark</button>
+      <button id="btnExit" class="btn danger small" type="button">Exit &amp; Submit</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <!-- ========== INTRO / INSTRUCTIONS ========== -->
+    <section id="screen-intro" class="card">
+      <div class="intro-stack">
+
+        <!-- Uniqname box -->
+        <div class="intro-card" id="uniqBox">
+          <h3 class="section-title">Participant</h3>
+          <div class="uniq-row">
+            <label for="uniqInput" class="uniq-label"><strong>Please enter your uniqname:</strong></label>
+            <input id="uniqInput" class="text-input" type="text"
+                   placeholder="UM uniqname (e.g., wolverin)" autocomplete="username" required />
+          </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="intro-card" id="instructionsBox">
+          <h2>Task</h2>
+          <p>You will see Internet memes (image + text). For each meme, do the following:</p>
+          <ol>
+            <li><strong>Choose the overall sentiment</strong> (Negative, Neutral, Positive, or Unsure).</li>
+            <li><strong>Rate your confidence</strong> from 1–5 (5 = highest). If you choose <em>Unsure</em>, confidence is not required.</li>
+            <li><strong>Optionally explain your reasoning</strong> (required if you choose <em>Unsure</em>).</li>
+          </ol>
+
+          <h3>Keyboard Shortcuts</h3>
+          <ul class="bullets">
+            <li><strong>Confidence:</strong> <kbd>1</kbd> – <kbd>5</kbd></li>
+            <li><strong>Sentiment:</strong> <kbd>A</kbd>=Negative, <kbd>B</kbd>=Neutral, <kbd>C</kbd>=Positive, <kbd>D</kbd>=Unsure</li>
+            <li><strong>Next:</strong> <kbd>Enter</kbd></li>
+          </ul>
+          <p class="muted">Shortcuts are ignored while typing in the reasoning box.</p>
+
+          <div id="aiIntroBlock" class="ai-only hidden">
+            <h3>AI Assistance</h3>
+            <p>You may click <em>Show AI suggestion</em> to view the model predictions and a list of keywords that helped with the model predictions.  
+             After viewing, you are expected to mark whether that suggestion was helpful (Yes/No).</p>
+          </div>
+
+          <!-- Example trigger -->
+          <button id="btnOpenExample" class="btn outline" type="button">Example</button>
+        </div>
+
+        <!-- Start -->
+        <div class="intro-bottom">
+          <div class="meta">
+            Trials in this session: <strong id="nTrialsLabel">12</strong>
+          </div>
+          <button id="btnStart" class="btn primary" type="button" disabled>Start Task</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== TASK ========== -->
+    <section id="screen-task" class="card hidden">
+      <div class="task-toolbar">
+        <button id="btnOpenHelp" class="btn ghost" type="button">View Instructions</button>
+        <div class="spacer"></div>
+        <div id="trialCounter" class="muted">Trial 1 of N</div>
+      </div>
+
+      <div class="task-grid">
+        <div class="img-col">
+          <figure class="img-frame">
+            <img id="memeImg" src="" alt="Meme"/>
+            <figcaption id="imgErr" class="warn hidden">Image failed to load — you may skip.</figcaption>
+          </figure>
+        </div>
+
+        <div class="right-col">
+          <div class="panel">
+            <div class="meme-text-wrap">
+              <div class="label">Overlay text</div>
+              <div id="memeText" class="meme-text"></div>
+            </div>
+
+            <div class="prompt">Choose a sentiment and your confidence.</div>
+
+            <fieldset class="fieldset roomy">
+              <legend>Your sentiment (A/B/C/D)</legend>
+              <div class="radio-row">
+                <label><input type="radio" name="sent" value="negative"> Negative</label>
+                <label><input type="radio" name="sent" value="neutral"> Neutral</label>
+                <label><input type="radio" name="sent" value="positive"> Positive</label>
+                <label><input type="radio" name="sent" value="unsure"> Unsure</label>
+              </div>
+            </fieldset>
+
+            <fieldset class="fieldset roomy" id="confGroup">
+              <legend>Confidence (1–5; 5 = highest)</legend>
+              <div class="radio-row tight">
+                <label><input type="radio" name="conf" value="1"> 1</label>
+                <label><input type="radio" name="conf" value="2"> 2</label>
+                <label><input type="radio" name="conf" value="3"> 3</label>
+                <label><input type="radio" name="conf" value="4"> 4</label>
+                <label><input type="radio" name="conf" value="5"> 5</label>
+              </div>
+              <div class="hint muted">Confidence is not required if you select <em>Unsure</em>.</div>
+            </fieldset>
+
+            <div class="reasoning roomy">
+              <div class="row">
+                <label for="reasonBox"><strong>Reasoning</strong></label>
+                <span class="muted">(optional; <em>required if Unsure</em>)</span>
+              </div>
+              <textarea id="reasonBox" rows="5" placeholder="Briefly explain your choice..."></textarea>
+            </div>
+
+            <div id="aiRow" class="ai-only hidden">
+              <button id="btnAI" class="btn" type="button">Show AI suggestion</button>
+              <div id="aiBox" class="aiBox hidden">
+                <div class="kvs" id="aiTopk"></div>
+                <div id="aiRationale" class="muted rationale"></div>
+                <div class="ai-helpful">
+                  <span>Was this suggestion helpful?</span>
+                  <label><input type="radio" name="ai_helpful" value="yes"> Yes</label>
+                  <label><input type="radio" name="ai_helpful" value="no"> No</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="actions">
+              <button id="btnSkip" class="btn" type="button" disabled title="Enabled if the image fails to load">Skip (broken image)</button>
+              <button id="btnNext" class="btn primary" type="button" disabled>Next ▶</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== DONE ========== -->
+    <section id="screen-done" class="card center hidden">
+      <h2>Thanks!</h2>
+      <p>Submission received.</p>
+      <p>Your <strong>survey code</strong>:</p>
+      <p class="survey"><strong id="surveyCode">—</strong></p>
+      <p class="muted">Please paste this back in MTurk!</p>
+      <!-- post-study survey button -->
+      <p>
+        <a id="btnSurvey" class="btn outline" href="#" target="_blank" rel="noopener">Open Post-Study Survey</a>
+      </p>
+    </section>
+
+  </main>
+
+  <!-- ========== MODAL: EXAMPLE ========== -->
+  <div id="exampleModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="exampleTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="exampleTitle">Example</h3>
+        <button id="btnCloseExample" class="icon-btn" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <img id="exampleModalImg" src="/static/images/image_808.jpg" alt="Example meme" class="example-img"/>
+        <div class="caption">Example meme (image + overlaid text)</div>
+
+        <div class="example-summary">
+          <span class="pill">Sentiment: Neutral</span>
+        </div>
+        <div class="example-summary">
+          <span class="pill">Confidence: 4 / 5</span>
+        </div>
+        <div class="example-reason">
+          Reason: It is funny but not offensive or motivational
+        </div>
+
+        <div class="meme-text-wrap mt8">
+          <div class="label">Overlay text</div>
+          <div class="meme-text">
+            OUR COUNTRY IS FALLING APART... AND WE HAVE PEOPLE CHASING A FUCKING POKEMON? imgflip.com
+          </div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="btnCloseExample2" class="btn primary" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MODAL: HELP ========== -->
+  <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="helpTitle">Instructions</h3>
+        <button id="btnCloseHelp" class="icon-btn" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>For each meme (image + text):</p>
+        <ol>
+          <li>Select the overall sentiment: <strong>Negative</strong>, <strong>Neutral</strong>, <strong>Positive</strong>, or <strong>Unsure</strong>.</li>
+          <li>Choose a confidence level <strong>1–5</strong> (only required if not Unsure).</li>
+          <li>Optionally explain your reasoning (required if Unsure).</li>
+        </ol>
+
+        <h4>Shortcuts</h4>
+        <ul class="bullets">
+          <li><strong>Confidence:</strong> <kbd>1</kbd>–<kbd>5</kbd></li>
+          <li><strong>Sentiment:</strong> <kbd>A</kbd>=Negative, <kbd>B</kbd>=Neutral, <kbd>C</kbd>=Positive, <kbd>D</kbd>=Unsure</li>
+          <li><strong>Next:</strong> <kbd>Enter</kbd></li>
+        </ul>
+        <p class="muted">Shortcuts do not trigger while your cursor is in the reasoning box.</p>
+
+        <div id="aiHelpBlock" class="ai-only hidden">
+          <h4>AI Assistance</h4>
+          <p>You may click <em>Show AI suggestion</em> to view the model predictions and a list of keywords that helped with the model predictions.  
+             After viewing, you are expected to mark whether that suggestion was helpful (Yes/No).</p>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button id="btnCloseHelp2" class="btn primary" type="button">Back to Task</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
