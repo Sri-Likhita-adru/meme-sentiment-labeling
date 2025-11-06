@@ -4,7 +4,14 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import pandas as pd
 
-# Prefer an external storage dir if provided (e.g., Render disk)
+# --- paths (define these FIRST) ---
+BASE_DIR     = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")   # index.html, styles.css, app.js
+STATIC_DIR   = os.path.join(BASE_DIR, "static")     # static/images/...
+IMAGES_DIR   = os.path.join(STATIC_DIR, "images")
+os.makedirs(IMAGES_DIR, exist_ok=True)
+
+# Prefer an external storage dir if provided (e.g., Render disk), else use repo data/
 DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -17,21 +24,16 @@ CODES_CSV    = os.path.join(DATA_DIR, "codes.csv")
 REPO_DATA = os.path.join(BASE_DIR, "data")
 fallback_csv = os.path.join(REPO_DATA, "study_trials.csv")
 if not os.path.exists(STUDY_CSV) and os.path.exists(fallback_csv):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    shutil.copyfile(fallback_csv, STUDY_CSV)
-
-# Try to ensure example image exists under /static/images
-WIN_EXAMPLE = r"C:\Users\srili\Downloads\UM Courses\Fall 2025\CSE 594\Assignment 3\Website\static\images\image_808.jpg"
-EXAMPLE_DST = os.path.join(IMAGES_DIR, "image_808.jpg")
-try:
-    if os.path.exists(WIN_EXAMPLE) and not os.path.exists(EXAMPLE_DST):
-        shutil.copyfile(WIN_EXAMPLE, EXAMPLE_DST)
-except Exception as _e:
-    print("Warning: could not copy example image:", _e)
+    try:
+        shutil.copyfile(fallback_csv, STUDY_CSV)
+    except Exception as e:
+        print("Warning: could not copy fallback study_trials.csv:", e)
 
 # ---------- load study data ----------
 if not os.path.exists(STUDY_CSV):
-    raise FileNotFoundError(f"Missing {STUDY_CSV}. Put your merged trials CSV there.")
+    raise FileNotFoundError(f"Missing {STUDY_CSV}. Put your merged trials CSV there "
+                            f"or set DATA_DIR to a path that contains it.")
+
 df = pd.read_csv(STUDY_CSV)
 print(f"Loaded {len(df)} rows from {STUDY_CSV}")
 
