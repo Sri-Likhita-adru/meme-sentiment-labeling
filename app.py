@@ -1,6 +1,7 @@
 import os, csv, hashlib, time, random, math, json, shutil
 from datetime import datetime
 from flask import Flask, jsonify, request, send_from_directory
+from flask import send_file
 from flask_cors import CORS
 import pandas as pd
 
@@ -199,12 +200,30 @@ def api_submit():
 
 @app.get("/download-data")
 def download_data():
-    import shutil, io
-    from flask import send_file
+    import os, zipfile
+    from io import BytesIO
 
-    zip_path = os.path.join(BASE_DIR, "submissions_backup.zip")
-    shutil.make_archive(zip_path.replace(".zip", ""), 'zip', DATA_DIR)
-    return send_file(zip_path, as_attachment=True)
+    # Zip the current DATA_DIR contents in memory
+    mem = BytesIO()
+    with zipfile.ZipFile(mem, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in os.walk(DATA_DIR):
+            for name in files:
+                full_path = os.path.join(root, name)
+                # store paths relative to DATA_DIR in the zip
+                arcname = os.path.relpath(full_path, DATA_DIR)
+                zf.write(full_path, arcname)
+
+    mem.seek(0)
+    ts = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
+    resp = send_file(
+        mem,
+        as_attachment=True,
+        download_name=f"data_backup_{ts}.zip",
+    )
+    # Prevent any caching
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 if __name__ == "__main__":
     import os
